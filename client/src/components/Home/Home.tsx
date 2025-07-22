@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import EventCard from '../Events/EventCard';
@@ -82,44 +82,79 @@ const Home: React.FC = () => {
     setSelectedCategory(categoryId);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    }
+  };
+
   return (
-    <div className="home-container">
+    <motion.div 
+      className="home-container"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="home-header">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          variants={itemVariants}
           className="welcome-section"
         >
-          <h1 className="welcome-title">
+          <motion.h1 
+            className="welcome-title"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             Hello, {user?.name?.split(' ')[0]} 👋
-          </h1>
-          <p className="welcome-subtitle">Discover amazing events near you</p>
+          </motion.h1>
+          <motion.p 
+            className="welcome-subtitle"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            Discover amazing events near you
+          </motion.p>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          variants={itemVariants}
           className="search-section"
         >
           <div className="search-container">
             <MagnifyingGlassIcon className="search-icon" />
-            <input
+            <motion.input
               type="text"
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="search-input"
+              whileFocus={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
             />
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        <motion.div variants={itemVariants}>
           <CategoryFilter
             categories={categories}
             selectedCategory={selectedCategory}
@@ -129,46 +164,82 @@ const Home: React.FC = () => {
       </div>
 
       <div className="events-section">
-        {loading ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p className="loading-text">Loading events...</p>
-          </div>
-        ) : events.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="no-events"
-          >
-            <div className="no-events-icon">🎭</div>
-            <h3 className="no-events-title">No events found</h3>
-            <p className="no-events-text">
-              {searchQuery || selectedCategory !== 'all'
-                ? 'Try adjusting your search or category filter'
-                : 'Check back later for new events'}
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="events-grid"
-          >
-            {events.map((event, index) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="loading-container"
+            >
+              <motion.div 
+                className="loading-spinner"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.p 
+                className="loading-text"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
               >
-                <EventCard event={event} />
+                Loading events...
+              </motion.p>
+            </motion.div>
+          ) : events.length === 0 ? (
+            <motion.div
+              key="no-events"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="no-events"
+            >
+              <motion.div 
+                className="no-events-icon"
+                animate={{ 
+                  y: [-8, 8, -8],
+                  rotate: [-2, 2, -2]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }}
+              >
+                🎭
               </motion.div>
-            ))}
-          </motion.div>
-        )}
+              <h3 className="no-events-title">No events found</h3>
+              <p className="no-events-text">
+                {searchQuery || selectedCategory !== 'all'
+                  ? 'Try adjusting your search or category filter'
+                  : 'Check back later for new events'}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="events"
+              className="events-grid"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {events.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  variants={itemVariants}
+                  custom={index}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <EventCard event={event} />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

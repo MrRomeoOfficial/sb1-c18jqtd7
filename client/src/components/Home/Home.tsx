@@ -8,6 +8,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import './Home.css';
 
+// Premium EventBook Home Component with World-Class UI Polish ✨
+
 interface Event {
   id: number;
   title: string;

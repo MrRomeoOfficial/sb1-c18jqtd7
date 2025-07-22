@@ -34,6 +34,7 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -42,7 +43,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory]);
 
   const fetchCategories = async () => {
     try {
@@ -74,8 +75,37 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast.error('Please enter a search term');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      await fetchEvents();
+      toast.success(`Found events for "${searchQuery}"`);
+    } catch (error) {
+      toast.error('Search failed. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleInputChange = (query: string) => {
     setSearchQuery(query);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    fetchEvents();
+    toast.success('Search cleared');
   };
 
   const handleCategoryChange = (categoryId: string) => {
@@ -141,16 +171,59 @@ const Home: React.FC = () => {
           className="search-section"
         >
           <div className="search-container">
-            <MagnifyingGlassIcon className="search-icon" />
-            <motion.input
-              type="text"
-              placeholder="Search events..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="search-input"
-              whileFocus={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            />
+            <div className="search-input-wrapper">
+              <MagnifyingGlassIcon className="search-icon" />
+              <motion.input
+                type="text"
+                placeholder="Search events, locations, categories..."
+                value={searchQuery}
+                onChange={(e) => handleInputChange(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="search-input"
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              />
+            </div>
+            <div className="search-buttons">
+              <AnimatePresence>
+                {searchQuery && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={clearSearch}
+                    className="search-clear-btn"
+                    title="Clear search"
+                  >
+                    ✕
+                  </motion.button>
+                )}
+              </AnimatePresence>
+              <motion.button
+                onClick={handleSearch}
+                disabled={isSearching}
+                className={`search-btn ${isSearching ? 'searching' : ''}`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isSearching ? (
+                  <motion.div
+                    className="search-spinner"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    🔍
+                  </motion.div>
+                ) : (
+                  <>
+                    <MagnifyingGlassIcon className="search-btn-icon" />
+                    <span className="search-btn-text">Search</span>
+                  </>
+                )}
+              </motion.button>
+            </div>
           </div>
         </motion.div>
 
